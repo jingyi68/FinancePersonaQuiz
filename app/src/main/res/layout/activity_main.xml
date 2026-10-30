@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:fitsSystemWindows="true"
+    android:background="#F5F7FA">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="28dp">
+
+        <!-- Welcome icon -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="💰"
+            android:textSize="65sp"
+            android:layout_marginBottom="20dp" />
+
+        <!-- App title -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="What's Your Money Persona?"
+            android:textSize="30sp"
+            android:textStyle="bold"
+            android:textColor="#1F2937"
+            android:gravity="center"
+            android:layout_marginBottom="16dp" />
+
+        <!-- App description -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Discover how your financial habits and spending choices shape your money management style."
+            android:textSize="16sp"
+            android:textColor="#6B7280"
+            android:gravity="center"
+            android:lineSpacingExtra="5dp"
+            android:layout_marginBottom="35dp" />
+
+        <!-- Start button -->
+        <Button
+            android:id="@+id/btnStart"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Discover My Persona"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#2563EB"
+            android:layout_marginBottom="30dp" />
+
+        <!-- Previous result card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="20dp"
+            android:background="@drawable/bg_card">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="YOUR QUIZ HISTORY"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.1"
+                android:textColor="#2563EB"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Saved result from SharedPreferences -->
+            <TextView
+                android:id="@+id/tvLastResult"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="No previous quiz taken yet"
+                android:textSize="15sp"
+                android:textColor="#374151"
+                android:gravity="center"
+                android:lineSpacingExtra="5dp" />
+
+        </LinearLayout>
+
+        <!-- Bottom message -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="10 questions • 4 financial personalities"
+            android:textSize="12sp"
+            android:textColor="#9CA3AF"
+            android:layout_marginTop="28dp" />
+
+    </LinearLayout>
+
+</ScrollView>

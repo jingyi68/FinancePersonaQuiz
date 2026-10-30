@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/resultBackground"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:fitsSystemWindows="true"
+    android:background="#F5F7FA">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Result heading -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="YOUR FINANCIAL PERSONALITY"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.1"
+            android:textColor="#6B7280"
+            android:gravity="center"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="22dp" />
+
+        <!-- Persona Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:background="@drawable/bg_card"
+            android:padding="24dp"
+            android:layout_marginBottom="20dp">
+
+            <!-- Persona icon -->
+            <TextView
+                android:id="@+id/tvPersonaIcon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="💰"
+                android:textSize="60sp"
+                android:layout_marginBottom="18dp" />
+
+            <!-- Persona name -->
+            <TextView
+                android:id="@+id/tvPersonaName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="The Super Saver"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:textColor="#2563EB"
+                android:gravity="center"
+                android:layout_marginBottom="18dp" />
+
+            <!-- Description -->
+            <TextView
+                android:id="@+id/tvDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Your persona description appears here."
+                android:textSize="15sp"
+                android:textColor="#374151"
+                android:gravity="center"
+                android:lineSpacingExtra="5dp" />
+
+        </LinearLayout>
+
+        <!-- Action Steps Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card"
+            android:padding="24dp"
+            android:layout_marginBottom="28dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Your Financial Action Plan"
+                android:textSize="19sp"
+                android:textStyle="bold"
+                android:textColor="#1F2937"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Dynamic financial advice -->
+            <TextView
+                android:id="@+id/tvActionSteps"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Financial advice appears here."
+                android:textSize="15sp"
+                android:textColor="#374151"
+                android:lineSpacingExtra="7dp" />
+
+        </LinearLayout>
+
+        <!-- Start Over button -->
+        <Button
+            android:id="@+id/btnStartOver"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Take Quiz Again"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#2563EB"
+            android:layout_marginBottom="20dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="These financial suggestions are for educational purposes only."
+            android:textSize="12sp"
+            android:textColor="#6B7280"
+            android:gravity="center"
+            android:layout_marginBottom="20dp" />
+
+    </LinearLayout>
+
+</ScrollView>

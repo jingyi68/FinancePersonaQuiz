@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="#F5F7FA">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Quiz heading -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="MONEY PERSONA QUIZ"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.1"
+            android:textColor="#2563EB"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Current question number -->
+        <TextView
+            android:id="@+id/tvQuestionNumber"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Question 1 of 10"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#374151"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Quiz progress -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:max="10"
+            android:progress="1"
+            android:progressTint="#2563EB"
+            android:progressBackgroundTint="#DDE5F0"
+            android:layout_marginBottom="38dp" />
+
+        <!-- Question -->
+        <TextView
+            android:id="@+id/tvQuestion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Question goes here"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="#1F2937"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Instructions -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Select the option that best describes you."
+            android:textSize="14sp"
+            android:textColor="#6B7280"
+            android:layout_marginBottom="30dp" />
+
+        <!-- Option 1 -->
+        <Button
+            android:id="@+id/btnOption1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="64dp"
+            android:padding="14dp"
+            android:text="Option 1"
+            android:textSize="15sp"
+            android:textColor="#1F2937"
+            android:textAllCaps="false"
+            android:gravity="center_vertical|start"
+            android:backgroundTint="#E3EBFA"
+            android:layout_marginBottom="14dp" />
+
+        <!-- Option 2 -->
+        <Button
+            android:id="@+id/btnOption2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="64dp"
+            android:padding="14dp"
+            android:text="Option 2"
+            android:textSize="15sp"
+            android:textColor="#1F2937"
+            android:textAllCaps="false"
+            android:gravity="center_vertical|start"
+            android:backgroundTint="#E3EBFA"
+            android:layout_marginBottom="14dp" />
+
+        <!-- Option 3 -->
+        <Button
+            android:id="@+id/btnOption3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="64dp"
+            android:padding="14dp"
+            android:text="Option 3"
+            android:textSize="15sp"
+            android:textColor="#1F2937"
+            android:textAllCaps="false"
+            android:gravity="center_vertical|start"
+            android:backgroundTint="#E3EBFA"
+            android:layout_marginBottom="14dp" />
+
+        <!-- Option 4 -->
+        <Button
+            android:id="@+id/btnOption4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="64dp"
+            android:padding="14dp"
+            android:text="Option 4"
+            android:textSize="15sp"
+            android:textColor="#1F2937"
+            android:textAllCaps="false"
+            android:gravity="center_vertical|start"
+            android:backgroundTint="#E3EBFA"
+            android:layout_marginBottom="14dp" />
+
+    </LinearLayout>
+
+</ScrollView>
