@@ -2,6 +2,7 @@ package my.edu.mckl;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.database.Cursor;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -20,6 +21,9 @@ public class ResultActivity extends AppCompatActivity {
 
     private Button btnStartOver;
 
+    // button to return to the home screen
+    private Button btnBackHome;
+
     private ScrollView resultBackground;
 
     @Override
@@ -35,14 +39,30 @@ public class ResultActivity extends AppCompatActivity {
 
         btnStartOver = findViewById(R.id.btnStartOver);
 
+        //connect the back to home button to the XML layout
+        btnBackHome = findViewById(R.id.btnBackHome);
+
         resultBackground = findViewById(R.id.resultBackground);
 
-        // Receive the calculated persona from QuizActivity
-        String persona = getIntent().getStringExtra("persona");
+        // Connect to Member 1's SQLite database
+        DatabaseHelper db = new DatabaseHelper(this);
 
-        // Prevent errors if no persona is received
-        if (persona == null) {
-            persona = "Unknown Persona";
+        // Retrieve the latest saved quiz result
+        Cursor cursor = db.getLatestResult();
+
+        String persona = "Unknown Persona";
+
+        try {
+            if (cursor.moveToFirst()) {
+
+                // Read the saved financial persona from SQLite
+                persona = cursor.getString(
+                        cursor.getColumnIndexOrThrow("persona_name")
+                );
+            }
+        } finally {
+            cursor.close();
+            db.close();
         }
 
         // Display the matched persona name
@@ -193,6 +213,15 @@ public class ResultActivity extends AppCompatActivity {
             // Close the current result screen
             finish();
         });
+
+        // Back to Home button
+        btnBackHome.setOnClickListener(v -> {
+
+            // Close ResultActivity and return to MainActivity
+            finish();
+
+        });
+
 
     }
 }

@@ -1,21 +1,41 @@
 package my.edu.mckl;
 
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-
-import android.content.SharedPreferences;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
+import java.util.Arrays;
+
 
 public class QuizActivity extends AppCompatActivity {
+
+    //Connects QuizActivity to SQList database
+    private DatabaseHelper db;
+
+    //stores questions retrieved from sqlite
+    private ArrayList<String> databaseQuestions = new ArrayList<>();
+
+    //stores the database id for each question
+    private ArrayList<Long> questionIds = new ArrayList<>();
+
+    //stores the four ans opt retrieved from sqlite
+    private String[] databaseOptions = new String[4];
+
+    //stores the financial persona category for each option
+    private String[] optionCategories = new String[4];
+
+    //stores the points awarded by each option
+    private int[] optionPoints = new int[4];
 
     private TextView tvQuestionNumber;
     private TextView tvQuestion;
@@ -27,8 +47,14 @@ public class QuizActivity extends AppCompatActivity {
     private Button btnOption3;
     private Button btnOption4;
 
+    // button for navigating to the previous question
+    private Button btnBack;
+
     // Keeps track of which question the user is answering
     private int currentQuestion = 0;
+
+    //stores the selected answer for each question, -1 means the question has not been answered
+    private int[] selectedAnswers;
 
     // Scores for the four financial personas
     private int saverScore = 0;
@@ -36,109 +62,14 @@ public class QuizActivity extends AppCompatActivity {
     private int investorScore = 0;
     private int shopperScore = 0;
 
-    // Quiz questions
-    private String[] questions = {
-
-            "You receive RM500 unexpectedly. What do you do?",
-
-            "How do you normally track your monthly spending?",
-
-            "You see a flash sale for something you like. What do you do?",
-
-            "What is your main financial goal?",
-
-            "Your friends invite you on an expensive trip. What do you do?",
-
-            "What do you usually do after receiving your salary?",
-
-            "How do you feel about financial risk?",
-
-            "Your current phone still works, but a new model is released. What do you do?",
-
-            "What do you usually do before making a large purchase?",
-
-            "Which statement sounds most like you?"
-    };
-
-    // Four options for every question
-    private String[][] options = {
-
-            {
-                    "Save most of it",
-                    "Spend it on an experience",
-                    "Invest some of it",
-                    "Buy something I want"
-            },
-
-            {
-                    "Carefully record and budget everything",
-                    "Track loosely while still enjoying myself",
-                    "Track it to find money I can invest",
-                    "I rarely track my spending"
-            },
-
-            {
-                    "Ignore it unless I planned to buy it",
-                    "Buy it if it would make me happy",
-                    "Consider whether it affects my financial goals",
-                    "Buy it immediately because it is on sale"
-            },
-
-            {
-                    "Build strong savings and financial security",
-                    "Have enough money to enjoy life",
-                    "Grow my wealth through investments",
-                    "I do not really have a financial goal"
-            },
-
-            {
-                    "Only go if it fits my budget",
-                    "Go because experiences are worth spending on",
-                    "Check whether it affects my investment plans",
-                    "Say yes and worry about the money later"
-            },
-
-            {
-                    "Put money into savings first",
-                    "Set aside money for entertainment",
-                    "Invest part of it",
-                    "Spend normally and see what is left"
-            },
-
-            {
-                    "I avoid financial risk whenever possible",
-                    "I will take risks for worthwhile experiences",
-                    "I am comfortable with calculated risks",
-                    "I do not think much about financial risk"
-            },
-
-            {
-                    "Keep using my current phone",
-                    "Upgrade if it improves my lifestyle",
-                    "Compare its financial value before deciding",
-                    "Buy the new one because I want it"
-            },
-
-            {
-                    "Save first and compare prices carefully",
-                    "Think about how much enjoyment I will get",
-                    "Analyse whether it is financially worthwhile",
-                    "Buy it if I like it enough"
-            },
-
-            {
-                    "Financial security comes first",
-                    "Money is meant to create experiences",
-                    "Money should work and grow for me",
-                    "I will worry about money when I need to"
-            }
-    };
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_quiz);
+
+        //Initialize the SQLite database
+        db = new DatabaseHelper(this);
 
         // Connect Java variables to XML views
         tvQuestionNumber = findViewById(R.id.tvQuestionNumber);
@@ -151,6 +82,8 @@ public class QuizActivity extends AppCompatActivity {
         btnOption3 = findViewById(R.id.btnOption3);
         btnOption4 = findViewById(R.id.btnOption4);
 
+        // connect the back button to its XML layout
+        btnBack = findViewById(R.id.btnBack);
 
         // Restore quiz progress if the Activity was recreated
         if (savedInstanceState != null) {
@@ -171,6 +104,31 @@ public class QuizActivity extends AppCompatActivity {
                     savedInstanceState.getInt("shopperScore", 0);
         }
 
+        //load questions from SQLite
+        loadQuestionsFromDatabase();
+
+        // Create an array based on the number of quiz questions
+        selectedAnswers = new int[databaseQuestions.size()];
+
+        // Set all answers to -1 (not answered yet)
+        Arrays.fill(selectedAnswers, -1);
+
+        // Restore selected answers after screen recreation
+        if (savedInstanceState != null) {
+            int[] savedAnswers =
+                    savedInstanceState.getIntArray("selectedAnswers");
+
+            if (savedAnswers != null &&
+                    savedAnswers.length == selectedAnswers.length) {
+                selectedAnswers = savedAnswers;
+            }
+        }
+
+        if (databaseQuestions.isEmpty()) {
+            tvQuestion.setText("No questions found in database.");
+            return;
+        }
+
         // Display the current question
         displayQuestion();
 
@@ -186,6 +144,87 @@ public class QuizActivity extends AppCompatActivity {
 
         // Option 4 - Carefree Shopper
         btnOption4.setOnClickListener(v -> selectAnswer(3));
+
+        // handle back button clicks
+        btnBack.setOnClickListener(v -> goBack());
+    }
+
+    // Retrieve all quiz questions from SQLite
+    private void loadQuestionsFromDatabase() {
+
+        Cursor cursor = db.getAllQuestions();
+
+        databaseQuestions.clear();
+
+        questionIds.clear();
+
+        try {
+            while (cursor.moveToNext()) {
+
+                String question = cursor.getString(
+                        cursor.getColumnIndexOrThrow("question_text")
+                );
+
+                databaseQuestions.add(question);
+
+                // Get the unique ID of the question
+                long questionId = cursor.getLong(
+                        cursor.getColumnIndexOrThrow("id")
+                );
+
+                // Store the ID for retrieving its answer options later
+                questionIds.add(questionId);
+            }
+        } finally {
+            cursor.close();
+        }
+    }
+
+    // Retrieve answer options for the current question from SQLite
+    private void loadOptionsFromDatabase() {
+
+        // Get the database ID of the current question
+        long questionId = questionIds.get(currentQuestion);
+
+        // Retrieve options belonging to this question
+        Cursor cursor = db.getOptionsForQuestion(questionId);
+
+        try {
+            while (cursor.moveToNext()) {
+
+                // Get the position of the option (0 to 3)
+                int position = cursor.getInt(
+                        cursor.getColumnIndexOrThrow("option_position")
+                );
+
+                // Get the answer option text
+                String optionText = cursor.getString(
+                        cursor.getColumnIndexOrThrow("option_text")
+                );
+
+                //retrieve the persona category linked to this option
+                String category = cursor.getString(
+                        cursor.getColumnIndexOrThrow("category_name")
+                );
+
+                // Retrieve the points awarded for selecting this option
+                int points = cursor.getInt(
+                        cursor.getColumnIndexOrThrow("points")
+                );
+
+                // Store the option in the correct position
+                if (position >= 0 && position < databaseOptions.length) {
+
+                    databaseOptions[position] = optionText;
+
+                    // Store the category and points for this option
+                    optionCategories[position] = category;
+                    optionPoints[position] = points;
+                }
+            }
+        } finally {
+            cursor.close();
+        }
     }
 
 
@@ -193,58 +232,127 @@ public class QuizActivity extends AppCompatActivity {
 
         // Update question number
         tvQuestionNumber.setText(
-                "Question " + (currentQuestion + 1) + " of " + questions.length
+                "Question " + (currentQuestion + 1) + " of " + databaseQuestions.size()
         );
 
         // Update progress bar
         progressBar.setProgress(currentQuestion + 1);
 
         // Display question
-        tvQuestion.setText(questions[currentQuestion]);
+        tvQuestion.setText(databaseQuestions.get(currentQuestion));
+
+        //Load answer options for the current question from SQLite;
+        loadOptionsFromDatabase();
 
         // Display the four options
-        btnOption1.setText(options[currentQuestion][0]);
-        btnOption2.setText(options[currentQuestion][1]);
-        btnOption3.setText(options[currentQuestion][2]);
-        btnOption4.setText(options[currentQuestion][3]);
+        btnOption1.setText(databaseOptions[0]);
+        btnOption2.setText(databaseOptions[1]);
+        btnOption3.setText(databaseOptions[2]);
+        btnOption4.setText(databaseOptions[3]);
+
+
+        // Group the four answer buttons together
+        Button[] answerButtons = {
+                btnOption1,
+                btnOption2,
+                btnOption3,
+                btnOption4
+        };
+
+        // Find the previously selected answer
+        int previousAnswer = selectedAnswers[currentQuestion];
+
+        // Mark the selected answer with a checkmark
+        if (previousAnswer >= 0 && previousAnswer < answerButtons.length) {
+
+            answerButtons[previousAnswer].setText(
+                    "✓ " + databaseOptions[previousAnswer]
+            );
+        }
+
     }
 
 
-    private void selectAnswer(int selectedOption) {
+    // Navigate to the previous question or home screen
+    private void goBack() {
 
-        // Increase the score based on the selected answer
-        switch (selectedOption) {
+        // Check whether the user is on the first question
+        if (currentQuestion > 0) {
 
-            case 0:
-                saverScore++;
-                break;
+            // Move to the previous question
+            currentQuestion--;
 
-            case 1:
-                spenderScore++;
-                break;
-
-            case 2:
-                investorScore++;
-                break;
-
-            case 3:
-                shopperScore++;
-                break;
-        }
-
-        // Check whether there are more questions
-        if (currentQuestion < questions.length - 1) {
-
-            // Move to the next question
-            currentQuestion++;
-
-            // Update the screen
+            // Display the previous question and its options
             displayQuestion();
 
         } else {
 
-            // All 10 questions have been answered
+            // Return to the home screen
+            finish();
+        }
+    }
+
+    private void selectAnswer(int selectedOption) {
+
+        // Check whether this question was answered previously
+        int previousAnswer = selectedAnswers[currentQuestion];
+
+        // Remove the previous answer's points if necessary
+        if (previousAnswer != -1) {
+            String oldCategory = optionCategories[previousAnswer];
+            int oldPoints = optionPoints[previousAnswer];
+
+            updatePersonaScore(oldCategory, -oldPoints);
+        }
+
+        // Retrieve the new answer's category and points
+        String newCategory = optionCategories[selectedOption];
+        int newPoints = optionPoints[selectedOption];
+
+        // Add the new answer's points
+        updatePersonaScore(newCategory, newPoints);
+
+        // Save the latest selected answer
+        selectedAnswers[currentQuestion] = selectedOption;
+
+        // Move to the next question
+        if (currentQuestion < databaseQuestions.size() - 1) {
+
+            currentQuestion++;
+            displayQuestion();
+
+        } else {
+
+            // All questions have been answered
             showResult();
+        }
+    }
+
+    // Adds or removes points from the correct financial persona
+    private void updatePersonaScore(String category, int points) {
+
+        switch (category) {
+
+            case "The Super Saver":
+                saverScore += points;
+                break;
+
+            case "The Experiential Spender":
+                spenderScore += points;
+                break;
+
+            case "The Savvy Investor":
+                investorScore += points;
+                break;
+
+            case "The Carefree Shopper":
+                shopperScore += points;
+                break;
+
+            default:
+                throw new IllegalStateException(
+                        "Unknown financial persona: " + category
+                );
         }
     }
 
@@ -284,17 +392,24 @@ public class QuizActivity extends AppCompatActivity {
                 Locale.getDefault()
         ).format(new Date());
 
-        // Open SharedPreferences
-        SharedPreferences preferences =
-                getSharedPreferences("FinanceQuizPrefs", MODE_PRIVATE);
+        // Save the completed quiz result into SQLite
+        long resultId = db.saveQuizResult(
+                result,
+                saverScore,
+                spenderScore,
+                investorScore,
+                shopperScore
+        );
 
-        // Save the matched persona and completion date
-        SharedPreferences.Editor editor = preferences.edit();
-
-        editor.putString("lastPersona", result);
-        editor.putString("lastDate", date);
-
-        editor.apply();
+        // Check whether the result was saved successfully
+        if (resultId == -1) {
+            Toast.makeText(
+                    this,
+                    "Failed to save quiz result",
+                    Toast.LENGTH_SHORT
+            ).show();
+            return;
+        }
 
         // Open ResultActivity
         Intent intent = new Intent(
