@@ -114,6 +114,20 @@
             android:backgroundTint="#2563EB"
             android:layout_marginBottom="20dp" />
 
+        <!-- Button to return to the home screen -->
+        <Button
+            android:id="@+id/btnBackHome"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Back to Home"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textAllCaps="false"
+            android:textColor="#2563EB"
+            android:backgroundTint="#E3EBFA"
+            android:layout_marginBottom="20dp" />
+
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
