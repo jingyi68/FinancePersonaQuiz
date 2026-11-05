@@ -14,12 +14,13 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     public static final String DATABASE_NAME = "finance_persona_quiz.db";
-    public static final int DATABASE_VERSION = 1;
+    public static final int DATABASE_VERSION = 2;
 
     public static final String TABLE_CATEGORIES = "categories";
     public static final String TABLE_QUESTIONS = "questions";
     public static final String TABLE_OPTIONS = "answer_options";
     public static final String TABLE_RESULTS = "quiz_results";
+    public static final String TABLE_PROGRESS = "quiz_progress";
 
     public DatabaseHelper(Context context) {
         this(context, DATABASE_NAME);
@@ -67,19 +68,28 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "shopper_score INTEGER NOT NULL, " +
                 "completed_at INTEGER NOT NULL)");
 
+        createProgressTable(db);
         seedQuiz(db);
+    }
+
+    // Store one active answer per question. Selecting another answer replaces it.
+    private void createProgressTable(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE " + TABLE_PROGRESS + " (" +
+                "question_id INTEGER PRIMARY KEY, " +
+                "option_id INTEGER NOT NULL, " +
+                "category_id INTEGER NOT NULL, " +
+                "points INTEGER NOT NULL CHECK(points >= 0), " +
+                "FOREIGN KEY(question_id) REFERENCES " + TABLE_QUESTIONS + "(id) ON DELETE CASCADE, " +
+                "FOREIGN KEY(option_id) REFERENCES " + TABLE_OPTIONS + "(id) ON DELETE CASCADE, " +
+                "FOREIGN KEY(category_id) REFERENCES " + TABLE_CATEGORIES + "(id))");
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // Appropriate for this class assignment's initial prototype.
-        // NOTE: Upgrading after incrementing DATABASE_VERSION erases saved results.
-        // Replace with a real migration before releasing a production app.
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_RESULTS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_OPTIONS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_QUESTIONS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_CATEGORIES);
-        onCreate(db);
+        // Version 1 -> 2 adds quiz progress without deleting previous quiz results.
+        if (oldVersion < 2) {
+            createProgressTable(db);
+        }
     }
 
     private void seedQuiz(SQLiteDatabase db) {
@@ -212,6 +222,53 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public int deleteOption(long optionId) {
         return getWritableDatabase().delete(TABLE_OPTIONS,
                 "id = ?", new String[]{String.valueOf(optionId)});
+    }
+
+    // Save an answer immediately in SQLite. The database supplies the official
+    // option, persona and point values, so the UI cannot save mismatched data.
+    public boolean saveProgressAnswer(long questionId, int optionPosition) {
+        SQLiteDatabase database = getWritableDatabase();
+        long optionId;
+        long categoryId;
+        int points;
+
+        try (Cursor cursor = database.query(
+                TABLE_OPTIONS, new String[]{"id", "category_id", "points"},
+                "question_id = ? AND option_position = ?",
+                new String[]{String.valueOf(questionId), String.valueOf(optionPosition)},
+                null, null, null)) {
+            if (!cursor.moveToFirst()) {
+                return false;
+            }
+            optionId = cursor.getLong(cursor.getColumnIndexOrThrow("id"));
+            categoryId = cursor.getLong(cursor.getColumnIndexOrThrow("category_id"));
+            points = cursor.getInt(cursor.getColumnIndexOrThrow("points"));
+        }
+
+        ContentValues values = new ContentValues();
+        values.put("question_id", questionId);
+        values.put("option_id", optionId);
+        values.put("category_id", categoryId);
+        values.put("points", points);
+        return database.insertWithOnConflict(TABLE_PROGRESS, null, values,
+                SQLiteDatabase.CONFLICT_REPLACE) != -1;
+    }
+
+    // Restore answers and their saved persona/points after app recreation.
+    // CALLER MUST CLOSE the Cursor after reading it.
+    public Cursor getSavedProgress() {
+        String sql = "SELECT p.question_id, o.option_position, " +
+                "c.name AS category_name, p.points " +
+                "FROM " + TABLE_PROGRESS + " p " +
+                "JOIN " + TABLE_OPTIONS + " o ON p.option_id = o.id " +
+                "JOIN " + TABLE_CATEGORIES + " c ON p.category_id = c.id " +
+                "ORDER BY p.question_id ASC";
+        return getReadableDatabase().rawQuery(sql, null);
+    }
+
+    // Once a quiz result is saved, start the next quiz with no previous answers.
+    public int clearProgress() {
+        return getWritableDatabase().delete(TABLE_PROGRESS, null, null);
     }
 
     // CREATE — record the final persona and all four scores after a quiz.

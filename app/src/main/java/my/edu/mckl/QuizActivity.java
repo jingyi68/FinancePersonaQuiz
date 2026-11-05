@@ -10,16 +10,13 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
 import java.util.Arrays;
 
 
 public class QuizActivity extends AppCompatActivity {
 
-    //Connects QuizActivity to SQList database
+    // Connects QuizActivity to SQLite database
     private DatabaseHelper db;
 
     //stores questions retrieved from sqlite
@@ -85,49 +82,53 @@ public class QuizActivity extends AppCompatActivity {
         // connect the back button to its XML layout
         btnBack = findViewById(R.id.btnBack);
 
-        // Restore quiz progress if the Activity was recreated
+        // Restore the visible question after screen rotation, if needed.
         if (savedInstanceState != null) {
-
-            currentQuestion =
-                    savedInstanceState.getInt("currentQuestion", 0);
-
-            saverScore =
-                    savedInstanceState.getInt("saverScore", 0);
-
-            spenderScore =
-                    savedInstanceState.getInt("spenderScore", 0);
-
-            investorScore =
-                    savedInstanceState.getInt("investorScore", 0);
-
-            shopperScore =
-                    savedInstanceState.getInt("shopperScore", 0);
+            currentQuestion = savedInstanceState.getInt("currentQuestion", 0);
         }
 
-        //load questions from SQLite
         loadQuestionsFromDatabase();
 
-        // Create an array based on the number of quiz questions
         selectedAnswers = new int[databaseQuestions.size()];
-
-        // Set all answers to -1 (not answered yet)
         Arrays.fill(selectedAnswers, -1);
-
-        // Restore selected answers after screen recreation
-        if (savedInstanceState != null) {
-            int[] savedAnswers =
-                    savedInstanceState.getIntArray("selectedAnswers");
-
-            if (savedAnswers != null &&
-                    savedAnswers.length == selectedAnswers.length) {
-                selectedAnswers = savedAnswers;
-            }
-        }
 
         if (databaseQuestions.isEmpty()) {
             tvQuestion.setText("No questions found in database.");
             return;
         }
+
+        // Rebuild all answer selections and scores from SQLite, not just RAM.
+        // This also lets a user leave and resume an unfinished quiz.
+        try (Cursor saved = db.getSavedProgress()) {
+            while (saved.moveToNext()) {
+                long questionId = saved.getLong(
+                        saved.getColumnIndexOrThrow("question_id"));
+                int questionIndex = questionIds.indexOf(questionId);
+                int option = saved.getInt(
+                        saved.getColumnIndexOrThrow("option_position"));
+                if (questionIndex < 0 || option < 0 || option >= 4) {
+                    continue;
+                }
+                selectedAnswers[questionIndex] = option;
+                String category = saved.getString(
+                        saved.getColumnIndexOrThrow("category_name"));
+                int points = saved.getInt(
+                        saved.getColumnIndexOrThrow("points"));
+                updatePersonaScore(category, points);
+            }
+        }
+
+        if (savedInstanceState == null) {
+            // Return to the first unanswered question on a fresh launch.
+            for (int i = 0; i < selectedAnswers.length; i++) {
+                if (selectedAnswers[i] == -1) {
+                    currentQuestion = i;
+                    break;
+                }
+            }
+        }
+        currentQuestion = Math.max(0,
+                Math.min(currentQuestion, databaseQuestions.size() - 1));
 
         // Display the current question
         displayQuestion();
@@ -294,6 +295,19 @@ public class QuizActivity extends AppCompatActivity {
 
     private void selectAnswer(int selectedOption) {
 
+        // Persist the answer and its points before changing the screen.
+        // A second selection for the same question replaces the old row.
+        try {
+            if (!db.saveProgressAnswer(questionIds.get(currentQuestion), selectedOption)) {
+                Toast.makeText(this, "Could not save your answer", Toast.LENGTH_SHORT).show();
+                return;
+            }
+        } catch (RuntimeException e) {
+            android.util.Log.e("FinancePersonaQuiz", "Saving answer failed", e);
+            Toast.makeText(this, "Database error: answer not saved", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         // Check whether this question was answered previously
         int previousAnswer = selectedAnswers[currentQuestion];
 
@@ -386,12 +400,6 @@ public class QuizActivity extends AppCompatActivity {
         // Calculate the winning financial persona
         String result = calculatePersona();
 
-        // Get the current date
-        String date = new SimpleDateFormat(
-                "dd MMM yyyy",
-                Locale.getDefault()
-        ).format(new Date());
-
         // Save the completed quiz result into SQLite
         long resultId = db.saveQuizResult(
                 result,
@@ -410,6 +418,9 @@ public class QuizActivity extends AppCompatActivity {
             ).show();
             return;
         }
+
+        // Clear unfinished answers only after the final result is saved.
+        db.clearProgress();
 
         // Open ResultActivity
         Intent intent = new Intent(
@@ -435,11 +446,7 @@ public class QuizActivity extends AppCompatActivity {
         // Save the current question
         outState.putInt("currentQuestion", currentQuestion);
 
-        // Save all four persona scores
-        outState.putInt("saverScore", saverScore);
-        outState.putInt("spenderScore", spenderScore);
-        outState.putInt("investorScore", investorScore);
-        outState.putInt("shopperScore", shopperScore);
+        // Scores and selected answers are restored from SQLite on recreation.
     }
 
 }
