@@ -6,11 +6,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-/**
- * SQLite database for the Finance Persona Quiz.
- * Member 1 owns this class; Member 2 can call its public methods from Activities.
- * The seed questions and options match Assignment 1 exactly.
- */
+
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     public static final String DATABASE_NAME = "finance_persona_quiz.db";
