@@ -89,4 +89,13 @@ public class MainActivity extends AppCompatActivity {
             cursor.close();
         }
     }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            Toast.makeText(this, "Select you answer", Toast.LENGTH_SHORT).show();
+            return true;
+        }
+        return super.onTouchEvent(event);
+    }
 }
