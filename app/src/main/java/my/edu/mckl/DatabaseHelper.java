@@ -6,7 +6,11 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-
+/**
+ * SQLite database for the Finance Persona Quiz.
+ * Member 1 owns this class; Member 2 can call its public methods from Activities.
+ * The seed questions and options match Assignment 1 exactly.
+ */
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     public static final String DATABASE_NAME = "finance_persona_quiz.db";
@@ -65,7 +69,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "completed_at INTEGER NOT NULL)");
 
         createProgressTable(db);
-        seedQuiz(db);
+        seedQuiz(db);  // Inserts the initial quiz content
     }
 
     // Store one active answer per question. Selecting another answer replaces it.
@@ -88,6 +92,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
+    // Adds the original questions
     private void seedQuiz(SQLiteDatabase db) {
         String[] categoryNames = {
                 "The Super Saver", "The Experiential Spender",
@@ -95,9 +100,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         };
         long[] categoryIds = new long[4];
         for (int i = 0; i < categoryNames.length; i++) {
-            ContentValues row = new ContentValues();
+            ContentValues row = new ContentValues();  // Stores column names and corresponding values before inserting or updating a db row
             row.put("name", categoryNames[i]);
-            categoryIds[i] = db.insertOrThrow(TABLE_CATEGORIES, null, row);
+            categoryIds[i] = db.insertOrThrow(TABLE_CATEGORIES, null, row);  // Inserts the row and returns the generated ID
         }
 
         String[] questions = {
@@ -134,10 +139,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
             for (int position = 0; position < answerOptions[i].length; position++) {
                 ContentValues optionRow = new ContentValues();
-                optionRow.put("question_id", questionId);
-                optionRow.put("option_position", position);
-                optionRow.put("option_text", answerOptions[i][position]);
-                optionRow.put("category_id", categoryIds[position]);
+                optionRow.put("question_id", questionId);  // Assigns the question ID to the answer option
+                optionRow.put("option_position", position);  // Stores the position of the answer option
+                optionRow.put("option_text", answerOptions[i][position]);  // Retrieves the actual answer text from the two-dimensional array
+                optionRow.put("category_id", categoryIds[position]);  // Links the answer option to its corresponding financial persona
                 optionRow.put("points", 1); // Assignment 1 awards one point per answer.
                 db.insertOrThrow(TABLE_OPTIONS, null, optionRow);
             }
@@ -157,18 +162,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public Cursor getAllQuestions() {
         return getReadableDatabase().query(
                 TABLE_QUESTIONS, new String[]{"id", "question_text", "sort_order"},
-                null, null, null, null, "sort_order ASC");
+                null, null, null, null, "sort_order ASC");  // The four null values are there because Android's SQLite query() method requires several parameters, but application doesn't need to use all of them.
     }
 
     // READ — get four choices, their linked financial persona, and the points.
     // CALLER MUST CLOSE the Cursor after reading it.
     public Cursor getOptionsForQuestion(long questionId) {
-        String sql = "SELECT o.id, o.question_id, o.option_position, " +
+        String sql = "SELECT o.id, o.question_id, o.option_position, " +  // String sql creates a variable that stores the SQL command, SELECT specifies which columns we want to retrieve from the database, o = options table
                 "o.option_text, o.category_id, c.name AS category_name, o.points " +
-                "FROM " + TABLE_OPTIONS + " o " +
-                "JOIN " + TABLE_CATEGORIES + " c ON o.category_id = c.id " +
-                "WHERE o.question_id = ? ORDER BY o.option_position ASC";
-        return getReadableDatabase().rawQuery(sql, new String[]{String.valueOf(questionId)});
+                "FROM " + TABLE_OPTIONS + " o " +  // Retrieving data from options table
+                "JOIN " + TABLE_CATEGORIES + " c ON o.category_id = c.id " +  // Connects the options table with the categories table
+                "WHERE o.question_id = ? ORDER BY o.option_position ASC";  // Filters the results so only answer choices belonging to the requested question are retrieved, question mark is a placeholder
+        return getReadableDatabase().rawQuery(sql, new String[]{String.valueOf(questionId)});  // Converts from long to String because rawQuery() accepts its selection arguments as a String array
     }
 
     // READ — get all four possible persona categories.
@@ -230,10 +235,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         try (Cursor cursor = database.query(
                 TABLE_OPTIONS, new String[]{"id", "category_id", "points"},
-                "question_id = ? AND option_position = ?",
+                "question_id = ? AND option_position = ?",  // Option must belong to the requested question, and must have selected answer position
                 new String[]{String.valueOf(questionId), String.valueOf(optionPosition)},
                 null, null, null)) {
-            if (!cursor.moveToFirst()) {
+            if (!cursor.moveToFirst()) {  // Check whether the option exists
                 return false;
             }
             optionId = cursor.getLong(cursor.getColumnIndexOrThrow("id"));
@@ -241,11 +246,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             points = cursor.getInt(cursor.getColumnIndexOrThrow("points"));
         }
 
+        // Prepare the progress data
         ContentValues values = new ContentValues();
         values.put("question_id", questionId);
         values.put("option_id", optionId);
         values.put("category_id", categoryId);
         values.put("points", points);
+
+        // Save progress
         return database.insertWithOnConflict(TABLE_PROGRESS, null, values,
                 SQLiteDatabase.CONFLICT_REPLACE) != -1;
     }
