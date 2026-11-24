@@ -106,8 +106,8 @@ public class QuizActivity extends AppCompatActivity {
                 int questionIndex = questionIds.indexOf(questionId);
                 int option = saved.getInt(
                         saved.getColumnIndexOrThrow("option_position"));
-                if (questionIndex < 0 || option < 0 || option >= 4) {
-                    continue;
+                if (questionIndex < 0 || option < 0 || option >= 4) {  // Question could not be found, answer position is negative, answer positions exceeds the available options
+                    continue; // Skips the rest of the current loop iteration and proceeds to the next saved database row
                 }
                 selectedAnswers[questionIndex] = option;
                 String category = saved.getString(
@@ -118,6 +118,7 @@ public class QuizActivity extends AppCompatActivity {
             }
         }
 
+        // Find where the user left off
         if (savedInstanceState == null) {
             // Return to the first unanswered question on a fresh launch.
             for (int i = 0; i < selectedAnswers.length; i++) {
@@ -127,6 +128,9 @@ public class QuizActivity extends AppCompatActivity {
                 }
             }
         }
+
+        // Validating the question index (prevents currentQuestion from exceeding the last question index and becoming negative)
+        // To prevent the application from trying to access a question index that doesn't exist, which could cause an IndexOutOfBoundsException and crash the app. This assumes that the question list is not empty.
         currentQuestion = Math.max(0,
                 Math.min(currentQuestion, databaseQuestions.size() - 1));
 
@@ -311,7 +315,7 @@ public class QuizActivity extends AppCompatActivity {
         // Check whether this question was answered previously
         int previousAnswer = selectedAnswers[currentQuestion];
 
-        // Remove the previous answer's points if necessary
+        // Remove the previous answer's points if necessary (user can go back and change answer)
         if (previousAnswer != -1) {
             String oldCategory = optionCategories[previousAnswer];
             int oldPoints = optionPoints[previousAnswer];
